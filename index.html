@@ -23,9 +23,28 @@ canvas {
 <script src="tir.js"></script>
 <script src="timerUtils.js"></script>
 <script src="collisions.js"></script>
-</head>
-<body align="center" bgcolor="black">
-  <canvas id="myCanvas"  width="600" height="600" style="background:url('image/bg.png') center center fixed;"></canvas> 
+<script src="/socket.io/socket.io.js"></script>
+<script>
 
+	var username = prompt("What's your name?");
+	var socket = io.connect();
+
+	// on connection to server, ask for user's name with an anonymous callback
+	socket.on('connect', function(){
+		// call the server-side function 'adduser' and send one parameter (value of prompt)
+		socket.emit('adduser', username);
+	});
+
+	socket.on('updatepos', function (username, newPos) {
+		
+		console.log("test");
+		//pos.innerHTML = newPos.x + " " + newPos.y;
+	});
+
+</script>
+</head>
+<body align="center" bgcolor="black" style="color:white;">
+  <canvas id="myCanvas"  width="600" height="600" style="background:url('image/bg.png') center center fixed;"></canvas> 
+  <div id="pos"></div>
 </body>
 </html>

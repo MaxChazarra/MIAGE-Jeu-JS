@@ -1,5 +1,4 @@
   // Inits
-  console.log("toto");
 
   window.onload = function init() {
     var game = new GF();
@@ -132,7 +131,7 @@
       if (monster.dead) {
         etatCourant = etats.gameOver;
       }
-      console.log(etatCourant);
+
       switch (etatCourant) {
         case etats.jeuEnCours:
           //main function, called each frame 
@@ -260,6 +259,9 @@
       if (monster.y > h - monster.size) {
         monster.y = h - monster.size;
       }
+
+      var pos = {'x':monster.x, 'y':monster.y}
+      socket.emit('sendpos', pos);
     }
 
     function updateTirs(delta) {
