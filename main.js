@@ -1,6 +1,42 @@
   // Inits
 
+    var sound;
+    var explosion;
+    var gameover;
+    var music;
+    var battleship;
+
   window.onload = function init() {
+
+    battleship = new Image();
+    battleship.src = 'image/battleship.png';
+
+    sound = new Howl({
+      urls: ['sounds/laser.wav'],
+      sprite: {
+        laser: [2000, 1000],
+      }
+    });
+
+    explosion = new Howl({
+      urls: ['sounds/explosion.ogg'],
+      sprite: {
+        explosion: [2000, 800],
+      }
+    });
+
+    gameover = new Howl({
+      urls: ['sounds/gameover.wav'],
+      sprite: {
+        gameover: [2000, 800],
+      }
+    });
+
+    music = new Howl({
+      urls: ['sounds/music.wav'],
+      loop: true,
+    });
+
     var game = new GF();
     game.start();
   };
@@ -31,48 +67,14 @@
 
     var dataPlayers = {};
 
-    var monster = {
-        'x': 100,
-        'y': 100,
-        'speed': 100, // pixels/s this time !
-        'size': 50,
-        'boundingCircleRadius': 70,
-        'dead': true
-      };
-
-    // vars for handling inputs
+    var currentUsername;
+    var currentShip = {};
     var inputStates = {};
 
     // array of balls to animate
     var ballArray = [];
 
     var tirArray = [];
-
-    var sound = new Howl({
-      urls: ['sounds/laser.wav'],
-      sprite: {
-        laser: [2000, 1000],
-      }
-    });
-
-    var explosion = new Howl({
-      urls: ['sounds/explosion.ogg'],
-      sprite: {
-        explosion: [2000, 800],
-      }
-    });
-
-    var gameover = new Howl({
-      urls: ['sounds/gameover.wav'],
-      sprite: {
-        gameover: [2000, 800],
-      }
-    });
-
-    var music = new Howl({
-      urls: ['sounds/music.wav'],
-      loop: true,
-    });
 
 
     var measureFPS = function(newTime) {
@@ -111,8 +113,6 @@
       // translate the coordinate system, draw relative to it
       ctx.translate(player.x, player.y);
 
-      battleship = new Image();
-      battleship.src = 'image/battleship.png';
       ctx.drawImage(battleship, 0, 0, player.size, player.size);
 
       // restore the context
@@ -123,7 +123,6 @@
       var delta = currentTime - oldTime;
       oldTime = currentTime;
       return delta;
-
     }
 
     socket.on('updateMonster', function (player) {
@@ -134,43 +133,51 @@
       dataPlayers = players
     });
 
-    socket.on('keydown', function(keycode, username){
-      console.log(username + ' :' +keycode);
+    socket.on('key', function(keycode, username){
+      dataPlayers[username].inputStates = keycode;
     });
 
     socket.on('tirClient', function(tir){
       tirArray[tirArray.length] = new Tir(tir.x, tir.y, tir.v);
     });
 
+    socket.on('getUsername', function(username){
+      currentUsername = username;
+    });
+
     var mainLoop = function(time) {
       // Clear the canvas
       clearCanvas();
 
-      if (monster.dead) {
-        etatCourant = etats.gameOver;
-      }
+      currentShip = dataPlayers[currentUsername];
 
       switch (etatCourant) {
+        
         case etats.jeuEnCours:
           //main function, called each frame 
           measureFPS(time);
+
+          if (currentShip.dead) {
+            etatCourant = etats.gameOver;
+          }
 
           // number of ms since last frame draw
           delta = timer(time);
           tempsTotal += delta;
           ctx.fillText((tempsTotal / 1000).toFixed(2), 100, 100);
 
-          socket.emit('getMonsters');
-          socket.emit('getMonster');
+          //socket.emit('getMonsters');
+          //socket.emit('getMonster');
 
           for (player in dataPlayers) {
             var ship = dataPlayers[player];
             drawMyMonster(ship);
+            updateMonsterPosition(ship, inputStates, delta);
           }
           
 
           // Check inputs and move the monster
-          updateMonsterPosition(delta);
+     
 
           // update and draw tirs
           updateTirs(delta);
@@ -179,12 +186,12 @@
           //updateBalls(delta);
 
 
-          socket.emit('sendpos', monster);
+          //socket.emit('sendpos', monster);
 
           ctx.beginPath();
 
-          if (inputStates.space) {
-            inputStates.space = false;
+          if (currentShip.inputStates.space) {
+            currentShip.inputStates.space = false;
             createTir();
             sound.play('laser');
           }
@@ -203,12 +210,11 @@
           tempsTotal = 0;
           ctx.beginPath();
           if (inputStates.space) {
-            monster.x = Math.round(w / 2) + monster.size / 2;
-            monster.y = Math.round((3 * h) / 2) + monster.size;
+            currentShip.x = Math.round(w / 2) + monster.size / 2;
+            currentShip.y = Math.round((3 * h) / 2) + monster.size;
             //createBalls(10);
-            monster.dead = false;
+            currentShip.dead = false;
             etatCourant = etats.jeuEnCours;
-            socket.emit('sendpos', monster);
             measureFPS();
             music.play();
           }
@@ -225,12 +231,11 @@
           tempsTotal = 0;
           ctx.beginPath();
           if (inputStates.space) {
-            monster.x = Math.round(w / 2) - monster.size / 4;
-            monster.y = Math.round((3 * h) / 4) - monster.size;
+            currentShip.x = Math.round(w / 2) - currentShip.size / 4;
+            currentShip.y = Math.round((3 * h) / 4) - currentShip.size;
             //createBalls(10);
-            monster.dead = false;
+            currentShip.dead = false;
             etatCourant = etats.jeuEnCours;
-            socket.emit('sendpos', monster);
             measureFPS();
             music.play();
           }
@@ -241,24 +246,24 @@
     };
 
 
-    function updateMonsterPosition(delta) {
+    function updateMonsterPosition(monster, inputStates, delta) {
       monster.speedX = monster.speedY = 0;
       // check inputStates
-      if (inputStates.left) {
+      if (monster.inputStates.left) {
         monster.speedX = -monster.speed;
       }
-      if (inputStates.up) {
+      if (monster.inputStates.up) {
         monster.speedY = -monster.speed;
       }
-      if (inputStates.right) {
+      if (monster.inputStates.right) {
         monster.speedX = monster.speed;
       }
-      if (inputStates.down) {
+      if (monster.inputStates.down) {
         monster.speedY = monster.speed;
       }
-      if (inputStates.space) {}
-      if (inputStates.mousePos) {}
-      if (inputStates.mousedown) {
+      if (monster.inputStates.space) {}
+      if (monster.inputStates.mousePos) {}
+      if (monster.inputStates.mousedown) {
         monster.speed = 500;
       } else {
         // mouse up
@@ -432,7 +437,7 @@
 
 
     function createTir() {
-      var tir = new Tir(monster.x + monster.size / 2, monster.y, 200);
+      var tir = new Tir(currentShip.x + currentShip.size / 2, currentShip.y, 200);
       tirArray[tirArray.length] = tir;
       socket.emit('tir', tir);
     }
@@ -458,7 +463,7 @@
 
       //add the listener to the main, window object, and update the states
       window.addEventListener('keydown', function(event) {
-        socket.emit('keydown', event.keyCode);
+        
         if (event.keyCode === 37) {
           inputStates.left = true;
         } else if (event.keyCode === 38) {
@@ -470,6 +475,7 @@
         } else if (event.keyCode === 32) {
           inputStates.space = true;
         }
+        socket.emit('key', inputStates);
       }, false);
 
       //if the key will be released, change the states object 
@@ -485,6 +491,7 @@
         } else if (event.keyCode === 32) {
           inputStates.space = false;
         }
+        socket.emit('key', inputStates);
       }, false);
 
       // Mouse event listeners
