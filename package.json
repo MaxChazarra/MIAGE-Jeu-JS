@@ -1,0 +1,25 @@
+{
+  "name": "js-jeu",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.13.3",
+    "socket.io": "^1.3.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaxChazarra/MIAGE-Jeu-JS.git"
+  },
+  "author": "MaxChazarra",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MaxChazarra/MIAGE-Jeu-JS/issues"
+  },
+  "homepage": "https://github.com/MaxChazarra/MIAGE-Jeu-JS#readme"
+}

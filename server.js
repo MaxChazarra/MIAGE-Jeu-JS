@@ -11,9 +11,9 @@ var app = express()
 server.listen(8082);
 
 // Indicate where static files are located. Without this, no external js file, no css...  
+app.use(express.static(__dirname + '/'));    
 
-    app.use(express.static(__dirname + '/'));    
-
+console.log("http://localhost:8082/");
 
 // routing
 app.get('/', function (req, res) {
@@ -27,15 +27,21 @@ var listOfPlayers = {};
 io.sockets.on('connection', function (socket) {
 
 	// when the client emits 'sendchat', this listens and executes
-	socket.on('sendchat', function (data) {
-		// we tell the client to execute 'updatechat' with 2 parameters
-		io.sockets.emit('updatechat', socket.username, data);
+	socket.on('sendpos', function (player) {
+		listOfPlayers[socket.username] = player;
+		// we tell the client to execute 'updatepos' with 2 parameters
+		socket.broadcast.emit('updatepos', listOfPlayers);
+
+		socket.emit('upposplayer', listOfPlayers[socket.username]);
+
 	});
 
-	// when the client emits 'sendchat', this listens and executes
-	socket.on('sendpos', function (newPos) {
-		// we tell the client to execute 'updatepos' with 2 parameters
-		socket.broadcast.emit('updatepos', socket.username, newPos);
+	socket.on('tir', function (tir) {
+		socket.broadcast.emit('tirClient', tir);
+	});
+
+	socket.on('keydown', function (keycode) {
+		socket.broadcast.emit('keydown', keycode, socket.username);
 	});
 
 	// when the client emits 'adduser', this listens and executes
@@ -62,10 +68,26 @@ io.sockets.on('connection', function (socket) {
 		// listOfPlayer = {'michel':{'x':0, 'y':0, 'v':0}, 
 		// 							john:{'x':10, 'y':10, 'v':0}}
 		// for this example we have x, y and v for speed... ?
-		var player = {'x':0, 'y':0, 'v':0}
-		listOfPlayers[username] = player;
+		var monster = {
+	      'x': 100,
+	      'y': 100,
+	      'speed': 100, // pixels/s this time !
+	      'size': 50,
+	      'boundingCircleRadius': 70
+	    };
+		listOfPlayers[username] = monster;
 		io.sockets.emit('updatePlayers',listOfPlayers);
 	});
+
+	socket.on('getMonster', function(){
+
+		socket.emit('updateMonster', listOfPlayers[socket.username]);
+	});
+
+	socket.on('getMonsters', function(){
+		io.sockets.emit('updateMonsters', listOfPlayers);
+	});
+
 
 	// when the user disconnects.. perform this
 	socket.on('disconnect', function(){
@@ -77,8 +99,5 @@ io.sockets.on('connection', function (socket) {
 		// Remove the player too
 		delete listOfPlayers[socket.username];		
 		io.sockets.emit('updatePlayers',listOfPlayers);
-		
-		// echo globally that this client has left
-		socket.broadcast.emit('updatechat', 'SERVER', socket.username + ' has disconnected');
 	});
 });

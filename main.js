@@ -29,17 +29,19 @@
     // for time based animation
     var delta, oldTime = 0;
 
+    var dataPlayers = {};
+
+    var monster = {
+        'x': 100,
+        'y': 100,
+        'speed': 100, // pixels/s this time !
+        'size': 50,
+        'boundingCircleRadius': 70,
+        'dead': true
+      };
+
     // vars for handling inputs
     var inputStates = {};
-
-    // The monster !
-    var monster = {
-      x: 100,
-      y: 100,
-      speed: 100, // pixels/s this time !
-      size: 50,
-      boundingCircleRadius: 70
-    };
 
     // array of balls to animate
     var ballArray = [];
@@ -102,16 +104,16 @@
     }
 
     // Functions for drawing the monster and maybe other objects
-    function drawMyMonster(x, y) {
+    function drawMyMonster(player) {
       // save the context
       ctx.save();
 
       // translate the coordinate system, draw relative to it
-      ctx.translate(x, y);
+      ctx.translate(player.x, player.y);
 
       battleship = new Image();
       battleship.src = 'image/battleship.png';
-      ctx.drawImage(battleship, 0, 0, monster.size, monster.size);
+      ctx.drawImage(battleship, 0, 0, player.size, player.size);
 
       // restore the context
       ctx.restore();
@@ -123,6 +125,22 @@
       return delta;
 
     }
+
+    socket.on('updateMonster', function (player) {
+      monster = player;
+    });
+
+    socket.on('updateMonsters', function(players){
+      dataPlayers = players
+    });
+
+    socket.on('keydown', function(keycode, username){
+      console.log(username + ' :' +keycode);
+    });
+
+    socket.on('tirClient', function(tir){
+      tirArray[tirArray.length] = new Tir(tir.x, tir.y, tir.v);
+    });
 
     var mainLoop = function(time) {
       // Clear the canvas
@@ -142,8 +160,14 @@
           tempsTotal += delta;
           ctx.fillText((tempsTotal / 1000).toFixed(2), 100, 100);
 
-          // draw the monster
-          drawMyMonster(monster.x, monster.y);
+          socket.emit('getMonsters');
+          socket.emit('getMonster');
+
+          for (player in dataPlayers) {
+            var ship = dataPlayers[player];
+            drawMyMonster(ship);
+          }
+          
 
           // Check inputs and move the monster
           updateMonsterPosition(delta);
@@ -152,7 +176,10 @@
           updateTirs(delta);
 
           // update and draw balls
-          updateBalls(delta);
+          //updateBalls(delta);
+
+
+          socket.emit('sendpos', monster);
 
           ctx.beginPath();
 
@@ -176,12 +203,12 @@
           tempsTotal = 0;
           ctx.beginPath();
           if (inputStates.space) {
-            console.log("space enfoncee");
             monster.x = Math.round(w / 2) + monster.size / 2;
             monster.y = Math.round((3 * h) / 2) + monster.size;
-            createBalls(10);
+            //createBalls(10);
             monster.dead = false;
             etatCourant = etats.jeuEnCours;
+            socket.emit('sendpos', monster);
             measureFPS();
             music.play();
           }
@@ -198,12 +225,12 @@
           tempsTotal = 0;
           ctx.beginPath();
           if (inputStates.space) {
-            console.log("space enfoncee");
             monster.x = Math.round(w / 2) - monster.size / 4;
             monster.y = Math.round((3 * h) / 4) - monster.size;
-            createBalls(10);
+            //createBalls(10);
             monster.dead = false;
             etatCourant = etats.jeuEnCours;
+            socket.emit('sendpos', monster);
             measureFPS();
             music.play();
           }
@@ -260,8 +287,6 @@
         monster.y = h - monster.size;
       }
 
-      var pos = {'x':monster.x, 'y':monster.y}
-      socket.emit('sendpos', pos);
     }
 
     function updateTirs(delta) {
@@ -299,7 +324,7 @@
           ball.color = 'red';
           ball.dead = true;
           explosion.play('explosion');
-          createBalls(1);
+          //createBalls(1);
 
         }
       }
@@ -409,6 +434,7 @@
     function createTir() {
       var tir = new Tir(monster.x + monster.size / 2, monster.y, 200);
       tirArray[tirArray.length] = tir;
+      socket.emit('tir', tir);
     }
 
 
@@ -432,6 +458,7 @@
 
       //add the listener to the main, window object, and update the states
       window.addEventListener('keydown', function(event) {
+        socket.emit('keydown', event.keyCode);
         if (event.keyCode === 37) {
           inputStates.left = true;
         } else if (event.keyCode === 38) {

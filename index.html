@@ -17,13 +17,13 @@ canvas {
   border: 1px solid black;
 }
 </style>
+<script src="/socket.io/socket.io.js"></script>
 <script src="howler.min.js"></script>
 <script src="main.js"></script>
 <script src="ball.js"></script>
 <script src="tir.js"></script>
 <script src="timerUtils.js"></script>
 <script src="collisions.js"></script>
-<script src="/socket.io/socket.io.js"></script>
 <script>
 
 	var username = prompt("What's your name?");
@@ -35,16 +35,15 @@ canvas {
 		socket.emit('adduser', username);
 	});
 
-	socket.on('updatepos', function (username, newPos) {
-		
-		console.log("test");
-		//pos.innerHTML = newPos.x + " " + newPos.y;
+	socket.on('upposplayer', function (newPos) {
+		var pos = document.querySelector('#pos');
+		pos.innerHTML = parseInt(newPos.x) + " " + parseInt(newPos.y);
 	});
 
 </script>
 </head>
 <body align="center" bgcolor="black" style="color:white;">
   <canvas id="myCanvas"  width="600" height="600" style="background:url('image/bg.png') center center fixed;"></canvas> 
-  <div id="pos"></div>
+  <div id="pos">Position inconnue</div>
 </body>
 </html>
