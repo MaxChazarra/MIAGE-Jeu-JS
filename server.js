@@ -42,6 +42,7 @@ io.sockets.on('connection', function (socket) {
 
 	socket.on('key', function (inputStates) {
 		io.sockets.emit('key', inputStates, socket.username);
+		socket.emit('upposplayer', listOfPlayers[socket.username]);
 	});
 
 	// when the client emits 'adduser', this listens and executes
@@ -58,7 +59,7 @@ io.sockets.on('connection', function (socket) {
 		var monster = {
 	      'x': 100,
 	      'y': 100,
-	      'speed': 100, // pixels/s this time !
+	      'speed': 200, // pixels/s this time !
 	      'size': 50,
 	      'boundingCircleRadius': 70,
 	      'inputStates': {},

@@ -5,11 +5,15 @@
     var gameover;
     var music;
     var battleship;
+    var ennemis;
 
   window.onload = function init() {
 
     battleship = new Image();
     battleship.src = 'image/battleship.png';
+
+    ennemis = new Image();
+    ennemis.src = 'image/alien-bomb.png';
 
     sound = new Howl({
       urls: ['sounds/laser.wav'],
@@ -171,22 +175,19 @@
 
           for (player in dataPlayers) {
             var ship = dataPlayers[player];
-            drawMyMonster(ship);
-            updateMonsterPosition(ship, inputStates, delta);
+            if(!ship.dead){
+              drawMyMonster(ship);
+              updateMonsterPosition(ship, inputStates, delta);
+            }
+
           }
           
-
-          // Check inputs and move the monster
-     
 
           // update and draw tirs
           updateTirs(delta);
 
           // update and draw balls
-          //updateBalls(delta);
-
-
-          //socket.emit('sendpos', monster);
+          updateBalls(delta);
 
           ctx.beginPath();
 
@@ -210,9 +211,9 @@
           tempsTotal = 0;
           ctx.beginPath();
           if (inputStates.space) {
-            currentShip.x = Math.round(w / 2) + monster.size / 2;
-            currentShip.y = Math.round((3 * h) / 2) + monster.size;
-            //createBalls(10);
+            currentShip.x = Math.round(w / 2) + currentShip.size / 2;
+            currentShip.y = Math.round((3 * h) / 2) + currentShip.size;
+            createBalls(10);
             currentShip.dead = false;
             etatCourant = etats.jeuEnCours;
             measureFPS();
@@ -233,7 +234,7 @@
           if (inputStates.space) {
             currentShip.x = Math.round(w / 2) - currentShip.size / 4;
             currentShip.y = Math.round((3 * h) / 4) - currentShip.size;
-            //createBalls(10);
+            createBalls(10);
             currentShip.dead = false;
             etatCourant = etats.jeuEnCours;
             measureFPS();
@@ -267,7 +268,7 @@
         monster.speed = 500;
       } else {
         // mouse up
-        monster.speed = 100;
+        monster.speed = 200;
       }
 
       // COmpute the incX and inY in pixels depending
@@ -329,7 +330,7 @@
           ball.color = 'red';
           ball.dead = true;
           explosion.play('explosion');
-          //createBalls(1);
+          createBalls(2);
 
         }
       }
@@ -347,27 +348,13 @@
         testCollisionWithWalls(ball);
 
         // teste collisions avec monstre
-        if (circleCollide(ball.x, ball.y, ball.radius,
-            monster.x + monster.size / 2, monster.y + monster.size / 2, monster.size / 2)) {
+        /*if (circleCollide(ball.x, ball.y, ball.radius,
+            currentShip.x + currentShip.size / 2, currentShip.y + currentShip.size / 2, currentShip.size / 2)) {
           //console.log("collision");
           ball.color = 'red';
-          monster.dead = true;
+          currentShip.dead = true;
           gameover.play('gameover');
           etatCourant = etats.gameOver;
-        }
-
-        /*if(circRectsOverlap(monster.x-50, monster.y-50, 100, 100, ball.x, ball.y, ball.radius)) {
-                            
-        //console.log("collision");
-        ball.color = 'red';
-        monster.dead = true;
-
-        }*/
-
-        /*if(rectsOverlap(monster.x, monster.y, monster.size, monster.size, ball.x, ball.y, ball.radius/2, ball.radius/2)){
-        console.log("collision");
-        ball.color = 'red';
-        monster.dead = true;
         }*/
 
         // 3) draw the ball
@@ -402,7 +389,7 @@
         ball.angle = -ball.angle;
         ball.dead = true;
         //console.log(Math.round(((tempsTotal/1000)/20)+1));
-        createBalls(Math.round(((tempsTotal / 1000) / 60) + 1));
+        createBalls(Math.round(((tempsTotal / 1000) / 10) + 1));
       }
     }
 
@@ -426,7 +413,7 @@
           80);
 
         if (!circleCollide(ball.x, ball.y, ball.radius,
-            monster.x, monster.y, monster.boundingCircleRadius)) {
+            currentShip.x, currentShip.y, currentShip.boundingCircleRadius)) {
           // On la rajoute au tableau
           ballArray[ballArray.length] = ball;
         } else {

@@ -14,9 +14,7 @@ function Ball(x, y, angle, v, diameter, color) {
     
     ctx.save();
       ctx.beginPath();
-      battleship = new Image();
-      battleship.src = 'image/alien-bomb.png';
-      ctx.drawImage(battleship, this.x, this.y, this.radius,this.radius);
+      ctx.drawImage(ennemis, this.x, this.y, this.radius,this.radius);
     ctx.restore();
   };
   

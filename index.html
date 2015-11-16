@@ -37,6 +37,7 @@ canvas {
 
 	socket.on('upposplayer', function (newPos) {
 		var pos = document.querySelector('#pos');
+		console.log(newPos.x);
 		pos.innerHTML = parseInt(newPos.x) + " " + parseInt(newPos.y);
 	});
 
